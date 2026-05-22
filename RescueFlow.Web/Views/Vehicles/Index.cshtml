@@ -1,0 +1,111 @@
+@model List<RescueFlow.Web.Models.Entities.RescueVehicle>
+@using RescueFlow.Web.Models.Enums
+@{
+    ViewData["Title"] = "Emergency Dispatch Fleet";
+}
+
+<div class="glass-card animated-fade">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 font-weight-700 text-white mb-1">🚒 Emergency Dispatch Fleet</h1>
+            <p class="text-secondary mb-0">Track crew capacity, equipment libraries, and current locations of rescue vehicles.</p>
+        </div>
+    </div>
+
+    @if (TempData["Message"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show bg-success bg-opacity-10 border-success text-success fs-8 py-2 px-3 mb-4" role="alert">
+            <span>✅ @TempData["Message"]</span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close" style="filter: invert(1); padding: 0.8rem;"></button>
+        </div>
+    }
+
+    @if (Model == null || !Model.Any())
+    {
+        <div class="text-center py-5 text-secondary">
+            <span class="fs-1 d-block mb-2">🚒</span>
+            <p class="mb-0">No dispatch vehicles configured in seed data.</p>
+        </div>
+    }
+    else
+    {
+        <div class="row">
+            @foreach (var v in Model)
+            {
+                string statusColor = "secondary";
+                if (v.Status == VehicleStatus.Available) statusColor = "success";
+                else if (v.Status == VehicleStatus.Assigned) statusColor = "primary";
+                else if (v.Status == VehicleStatus.Maintenance) statusColor = "warning text-dark";
+                else if (v.Status == VehicleStatus.Unavailable) statusColor = "danger";
+
+                <div class="col-md-6 col-lg-4 mb-4">
+                    <div class="glass-card h-100 mb-0 d-flex flex-column" style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05);">
+                        <div class="d-flex justify-content-between align-items-start mb-3">
+                            <div>
+                                <h3 class="h5 text-white mb-0 font-weight-600">@v.Code</h3>
+                                <span class="badge bg-secondary fs-9 mt-1">@v.VehicleType</span>
+                            </div>
+                            <span class="badge bg-@statusColor px-2 py-1 fs-9 font-weight-600">
+                                @v.Status.ToString().ToUpper()
+                            </span>
+                        </div>
+
+                        <div class="fs-8 mb-3">
+                            <div class="d-flex justify-content-between py-1 border-bottom border-secondary border-opacity-10">
+                                <span class="text-secondary">Station:</span>
+                                <span class="text-white font-weight-500">@v.Station.Name</span>
+                            </div>
+                            <div class="d-flex justify-content-between py-1 border-bottom border-secondary border-opacity-10">
+                                <span class="text-secondary">Crew Active:</span>
+                                <span class="text-white font-weight-500">@v.CurrentCrewCount / @v.MaxCrewCapacity</span>
+                            </div>
+                            <div class="d-flex justify-content-between py-1 border-bottom border-secondary border-opacity-10">
+                                <span class="text-secondary">GPS Coordinates:</span>
+                                <span class="text-white font-monospace">@v.CurrentLatitude, @v.CurrentLongitude</span>
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <span class="d-block text-secondary fs-8 font-weight-600 mb-2">Equipped Inventory:</span>
+                            @if (!v.VehicleEquipment.Any())
+                            {
+                                <span class="text-muted fs-8">No equipment listed.</span>
+                            }
+                            else
+                            {
+                                <div class="d-flex flex-wrap gap-1">
+                                    @foreach (var eq in v.VehicleEquipment)
+                                    {
+                                        <span class="badge bg-dark border border-secondary border-opacity-30 text-secondary fs-9 py-1 px-2">
+                                            ⚙️ @eq.Equipment.Name
+                                        </span>
+                                    }
+                                </div>
+                            }
+                        </div>
+
+                        <div class="mt-auto pt-3 border-top border-secondary border-opacity-10">
+                            <form asp-action="UpdateStatus" method="post" class="d-flex gap-2 align-items-center">
+                                <input type="hidden" name="id" value="@v.Id" />
+                                <select name="status" class="form-select form-select-sm bg-dark text-white border-secondary border-opacity-30 fs-8 py-1">
+                                    @foreach (VehicleStatus s in Enum.GetValues(typeof(VehicleStatus)))
+                                    {
+                                        if (s == v.Status)
+                                        {
+                                            <option value="@s" selected>@s</option>
+                                        }
+                                        else
+                                        {
+                                            <option value="@s">@s</option>
+                                        }
+                                    }
+                                </select>
+                                <button type="submit" class="btn btn-primary-custom py-1 px-3 fs-8 font-weight-600">Update</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>

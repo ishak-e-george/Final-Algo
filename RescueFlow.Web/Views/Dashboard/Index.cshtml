@@ -1,0 +1,189 @@
+@model List<RescueFlow.Web.Models.Entities.RescueCase>
+@using RescueFlow.Web.Models.Enums
+@using RescueFlow.Web.Models.Entities
+@{
+    ViewData["Title"] = "Operations Center";
+}
+
+<div class="animated-fade">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h2 font-weight-700 text-white mb-1">Rescue Operations Command</h1>
+            <p class="text-secondary mb-0">Safety-Critical automated dispatch tracking and analysis command center.</p>
+        </div>
+        <div class="d-flex gap-2">
+            <a class="btn btn-secondary-custom" asp-controller="RescueCases" asp-action="Index">📂 View All Cases</a>
+            <a class="btn btn-primary-custom" asp-controller="RescueCases" asp-action="Create">🚨 Report New Incident</a>
+        </div>
+    </div>
+
+    <!-- KPI Metrics -->
+    <div class="row mb-2">
+        <div class="col-md-3 col-sm-6">
+            <div class="glass-card stat-card blue py-4">
+                <span class="text-secondary fs-7 text-uppercase font-weight-600 d-block mb-1">Total Incidents</span>
+                <span class="display-6 font-weight-700 text-white">@ViewBag.TotalCases</span>
+            </div>
+        </div>
+        <div class="col-md-3 col-sm-6">
+            <div class="glass-card stat-card teal py-4">
+                <span class="text-secondary fs-7 text-uppercase font-weight-600 d-block mb-1">Auto-Assigned</span>
+                <span class="display-6 font-weight-700 text-success">@ViewBag.AutoAssigned</span>
+            </div>
+        </div>
+        <div class="col-md-3 col-sm-6">
+            <div class="glass-card stat-card orange py-4">
+                <span class="text-secondary fs-7 text-uppercase font-weight-600 d-block mb-1">Escalated (Input Issues)</span>
+                <span class="display-6 font-weight-700 text-warning">@ViewBag.Escalated</span>
+            </div>
+        </div>
+        <div class="col-md-3 col-sm-6">
+            <div class="glass-card stat-card red py-4">
+                <span class="text-secondary fs-7 text-uppercase font-weight-600 d-block mb-1">Blocked (No Resources)</span>
+                <span class="display-6 font-weight-700 text-danger">@ViewBag.BlockedNoSafePlan</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Left Column: Active Cases -->
+        <div class="col-lg-8">
+            <div class="glass-card h-100">
+                <h3 class="h5 text-white mb-4">Latest Incident Queue</h3>
+                @if (Model == null || !Model.Any())
+                {
+                    <div class="text-center py-5 text-secondary">
+                        <span class="fs-1 d-block mb-2">🧊</span>
+                        <p class="mb-0">No incidents reported yet. The queue is empty.</p>
+                    </div>
+                }
+                else
+                {
+                    <div class="table-responsive">
+                        <table class="table-custom">
+                            <thead>
+                                <tr>
+                                    <th>Incident ID</th>
+                                    <th>Category</th>
+                                    <th>Patients</th>
+                                    <th>Severity</th>
+                                    <th>Status</th>
+                                    <th>Reported</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var c in Model)
+                                {
+                                    string badgeClass = "badge-pending";
+                                    switch (c.Status)
+                                    {
+                                        case CaseStatus.AutoAssigned: badgeClass = "badge-assigned"; break;
+                                        case CaseStatus.BlockedNoSafePlan: badgeClass = "badge-blocked"; break;
+                                        case CaseStatus.Escalated: badgeClass = "badge-escalated"; break;
+                                        case CaseStatus.Closed: badgeClass = "badge-closed"; break;
+                                        case CaseStatus.Cancelled: badgeClass = "badge-cancelled"; break;
+                                    }
+
+                                    <tr>
+                                        <td class="font-weight-600 text-white">#@c.Id</td>
+                                        <td>
+                                            <span class="d-block text-white">@c.IncidentCategory</span>
+                                            <small class="text-muted">@c.InjuryType</small>
+                                        </td>
+                                        <td>@c.NumberOfPatients</td>
+                                        <td>
+                                            <div class="d-flex align-items-center gap-2">
+                                                <div class="d-flex text-warning">
+                                                    @for (int i = 1; i <= 5; i++)
+                                                    {
+                                                        if (i <= c.CalculatedSeverity)
+                                                        {
+                                                            <span>★</span>
+                                                        }
+                                                        else
+                                                        {
+                                                            <span class="text-secondary" style="opacity: 0.3;">★</span>
+                                                        }
+                                                    }
+                                                </div>
+                                                <span class="text-muted fs-8">(@c.CalculatedSeverity/5)</span>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <span class="badge-custom @badgeClass">@c.Status</span>
+                                        </td>
+                                        <td class="text-secondary fs-8">@c.CreatedAt.ToLocalTime().ToString("g")</td>
+                                        <td>
+                                            <a class="btn btn-secondary-custom py-1 px-3 fs-8" asp-controller="RescueCases" asp-action="Details" asp-route-id="@c.Id">🔍 Analyze</a>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <!-- Right Column: System Resources -->
+        <div class="col-lg-4">
+            <!-- Fleet Status Card -->
+            <div class="glass-card mb-4">
+                <h3 class="h5 text-white mb-3">Active Dispatch Fleet</h3>
+                <div class="d-flex justify-content-between align-items-center py-2 border-bottom border-secondary" style="--bs-border-opacity: .1;">
+                    <span class="text-secondary">🟢 Available Responders</span>
+                    <span class="badge bg-success font-weight-700">@ViewBag.AvailableVehicles</span>
+                </div>
+                <div class="d-flex justify-content-between align-items-center py-2 border-bottom border-secondary" style="--bs-border-opacity: .1;">
+                    <span class="text-secondary">🔵 Actively Assigned</span>
+                    <span class="badge bg-primary font-weight-700">@ViewBag.AssignedVehicles</span>
+                </div>
+                <div class="d-flex justify-content-between align-items-center py-2">
+                    <span class="text-secondary">🟠 Under Maintenance</span>
+                    <span class="badge bg-warning text-dark font-weight-700">@ViewBag.MaintenanceVehicles</span>
+                </div>
+                <a class="btn btn-secondary-custom w-100 mt-3" asp-controller="Vehicles" asp-action="Index">🚒 Manage Vehicles</a>
+            </div>
+
+            <!-- Hospital Load Capacities -->
+            <div class="glass-card">
+                <h3 class="h5 text-white mb-3">Critical Hospital Capacities</h3>
+                @foreach (var h in (List<HospitalCapacity>)ViewBag.Hospitals)
+                {
+                    double pct = h.IcuCapacity > 0 ? ((double)h.CurrentIcuLoad / h.IcuCapacity) * 100 : 0;
+                    string fillClass = "";
+                    if (pct >= 85) fillClass = "danger";
+                    else if (pct >= 60) fillClass = "warning";
+
+                    double tpct = h.TraumaCapacity > 0 ? ((double)h.CurrentTraumaLoad / h.TraumaCapacity) * 100 : 0;
+                    string tfillClass = "";
+                    if (tpct >= 85) tfillClass = "danger";
+                    else if (tpct >= 60) tfillClass = "warning";
+
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between fs-8 mb-1">
+                            <span class="text-white font-weight-600">@h.Hospital.Name</span>
+                            <span class="text-secondary">ICU: @h.CurrentIcuLoad / @h.IcuCapacity beds</span>
+                        </div>
+                        <div class="load-bar mb-2">
+                            <div class="load-fill @fillClass" style="width: @pct%"></div>
+                        </div>
+                        
+                        @if (h.TraumaCapacity > 0)
+                        {
+                            <div class="d-flex justify-content-between fs-8 mb-1">
+                                <span class="text-muted">Trauma Beds</span>
+                                <span class="text-secondary">@h.CurrentTraumaLoad / @h.TraumaCapacity</span>
+                            </div>
+                            <div class="load-bar">
+                                <div class="load-fill @tfillClass" style="width: @tpct%"></div>
+                            </div>
+                        }
+                    </div>
+                }
+                <a class="btn btn-secondary-custom w-100 mt-2" asp-controller="Hospitals" asp-action="Index">🏥 Hospital Details</a>
+            </div>
+        </div>
+    </div>
+</div>

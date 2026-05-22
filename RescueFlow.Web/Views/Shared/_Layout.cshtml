@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - RescueFlow Dispatch Command</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/RescueFlow.Web.styles.css" asp-append-version="true" />
+</head>
+<body>
+    <header class="sticky-top">
+        <nav class="navbar navbar-expand-lg navbar-dark py-3">
+            <div class="container">
+                <a class="navbar-brand d-flex align-items-center gap-2" asp-controller="Dashboard" asp-action="Index">
+                    <span class="fs-4">🚨 RescueFlow</span>
+                    <span class="badge bg-danger text-uppercase px-2 py-1 fs-9" style="font-size: 0.65rem; letter-spacing: 1px;">SC-RCMDA V1</span>
+                </a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav"
+                        aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse" id="navbarNav">
+                    <ul class="navbar-nav ms-auto gap-2">
+                        <li class="nav-item">
+                            <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Dashboard" ? "active text-white" : "")" 
+                               asp-controller="Dashboard" asp-action="Index">📊 Dashboard</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "RescueCases" ? "active text-white" : "")" 
+                               asp-controller="RescueCases" asp-action="Index">🚑 Active Cases</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Stations" ? "active text-white" : "")" 
+                               asp-controller="Stations" asp-action="Index">🏢 Stations</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Vehicles" ? "active text-white" : "")" 
+                               asp-controller="Vehicles" asp-action="Index">🚒 Fleet</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Hospitals" ? "active text-white" : "")" 
+                               asp-controller="Hospitals" asp-action="Index">🏥 Hospitals</a>
+                        </li>
+                    </ul>
+                    <div class="ms-lg-3 d-flex align-items-center">
+                        <a class="btn btn-primary-custom d-flex align-items-center gap-2" asp-controller="RescueCases" asp-action="Create">
+                            ➕ Report Case
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <div class="container my-5">
+        <main role="main" class="pb-5">
+            @RenderBody()
+        </main>
+    </div>
+
+    <footer class="text-secondary text-center py-4">
+        <div class="container">
+            <p class="mb-0 fs-7">&copy; 2026 - RescueFlow Operations Command. All rights reserved. Run-level safety critical system.</p>
+            <p class="mb-0 text-muted" style="font-size: 0.75rem;">Engineered for zero-fault tolerance using SC-RCMDA automated optimization.</p>
+        </div>
+    </footer>
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

@@ -1,0 +1,275 @@
+@model RescueFlow.Web.Models.ViewModels.RescueCaseCreateViewModel
+@using RescueFlow.Web.Models.Enums
+@{
+    ViewData["Title"] = "Report New Incident";
+}
+
+<div class="row animated-fade">
+    <!-- Left Column: Form -->
+    <div class="col-lg-8 mb-4">
+        <div class="glass-card">
+            <h1 class="h3 font-weight-700 text-white mb-2">🚨 Report Incident</h1>
+            <p class="text-secondary mb-4">Submit raw rescue details to initiate the SC-RCMDA solver.</p>
+
+            <form asp-action="Create" method="post">
+                <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label asp-for="ReporterName" class="form-label form-label-custom">Reporter Name</label>
+                        <input asp-for="ReporterName" class="form-control form-control-custom" placeholder="e.g. John Doe" />
+                        <span asp-validation-for="ReporterName" class="text-danger fs-8"></span>
+                    </div>
+                    <div class="col-md-6">
+                        <label asp-for="ReporterPhone" class="form-label form-label-custom">Reporter Contact Phone</label>
+                        <input asp-for="ReporterPhone" class="form-control form-control-custom" placeholder="e.g. 555-0199" />
+                        <span asp-validation-for="ReporterPhone" class="text-danger fs-8"></span>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="LocationDescription" class="form-label form-label-custom">Location Description</label>
+                    <input asp-for="LocationDescription" class="form-control form-control-custom" placeholder="e.g. Broadway & 42nd St, NW Corner" />
+                    <span asp-validation-for="LocationDescription" class="text-danger fs-8"></span>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label asp-for="Latitude" class="form-label form-label-custom">Latitude (coordinates)</label>
+                        <input asp-for="Latitude" id="Latitude" class="form-control form-control-custom" type="number" step="0.0001" placeholder="40.7128" />
+                        <span asp-validation-for="Latitude" class="text-danger fs-8"></span>
+                    </div>
+                    <div class="col-md-6">
+                        <label asp-for="Longitude" class="form-label form-label-custom">Longitude (coordinates)</label>
+                        <input asp-for="Longitude" id="Longitude" class="form-control form-control-custom" type="number" step="0.0001" placeholder="-74.0060" />
+                        <span asp-validation-for="Longitude" class="text-danger fs-8"></span>
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-md-4">
+                        <label asp-for="IncidentCategory" class="form-label form-label-custom">Incident Category</label>
+                        <select asp-for="IncidentCategory" id="IncidentCategory" class="form-control form-control-custom" asp-items="Html.GetEnumSelectList<IncidentCategory>()">
+                            <option value="">-- Select Category --</option>
+                        </select>
+                        <span asp-validation-for="IncidentCategory" class="text-danger fs-8"></span>
+                    </div>
+                    <div class="col-md-4">
+                        <label asp-for="InjuryType" class="form-label form-label-custom">Injury Type</label>
+                        <select asp-for="InjuryType" id="InjuryType" class="form-control form-control-custom" asp-items="Html.GetEnumSelectList<InjuryType>()">
+                            <option value="">-- Select Injury --</option>
+                        </select>
+                        <span asp-validation-for="InjuryType" class="text-danger fs-8"></span>
+                    </div>
+                    <div class="col-md-4">
+                        <label asp-for="NumberOfPatients" id="PatientCountLabel" class="form-label form-label-custom">Number of Patients</label>
+                        <input asp-for="NumberOfPatients" id="NumberOfPatients" class="form-control form-control-custom" type="number" min="1" max="100" />
+                        <span asp-validation-for="NumberOfPatients" class="text-danger fs-8"></span>
+                    </div>
+                </div>
+
+                <h3 class="h6 text-white mb-3 mt-4">Risk &amp; Safety Factors (Hard Constraints)</h3>
+                
+                <div class="row mb-3 px-2">
+                    <div class="col-md-4 mb-2">
+                        <div class="form-check">
+                            <input asp-for="HasSevereBleeding" id="HasSevereBleeding" class="form-check-input" type="checkbox" />
+                            <label class="form-check-label text-secondary fs-8" for="HasSevereBleeding">🩸 Severe Bleeding</label>
+                        </div>
+                    </div>
+                    <div class="col-md-4 mb-2">
+                        <div class="form-check">
+                            <input asp-for="HasBreathingProblem" id="HasBreathingProblem" class="form-check-input" type="checkbox" />
+                            <label class="form-check-label text-secondary fs-8" for="HasBreathingProblem">🫁 Breathing Problems</label>
+                        </div>
+                    </div>
+                    <div class="col-md-4 mb-2">
+                        <div class="form-check">
+                            <input asp-for="IsUnconscious" id="IsUnconscious" class="form-check-input" type="checkbox" />
+                            <label class="form-check-label text-secondary fs-8" for="IsUnconscious">💤 Patient Unconscious</label>
+                        </div>
+                    </div>
+                    <div class="col-md-4 mb-2">
+                        <div class="form-check">
+                            <input asp-for="HasFire" id="HasFire" class="form-check-input" type="checkbox" />
+                            <label class="form-check-label text-secondary fs-8" for="HasFire">🔥 Active Fire Involved</label>
+                        </div>
+                    </div>
+                    <div class="col-md-4 mb-2">
+                        <div class="form-check">
+                            <input asp-for="HasTrappedVictim" id="HasTrappedVictim" class="form-check-input" type="checkbox" />
+                            <label class="form-check-label text-secondary fs-8" for="HasTrappedVictim">⛓️ Trapped Victim(s)</label>
+                        </div>
+                    </div>
+                    <div class="col-md-4 mb-2">
+                        <div class="form-check">
+                            <input asp-for="HasChemicalRisk" id="HasChemicalRisk" class="form-check-input" type="checkbox" />
+                            <label class="form-check-label text-secondary fs-8" for="HasChemicalRisk">☣️ HazMat / Chemical Risk</label>
+                        </div>
+                    </div>
+                    <div class="col-md-4 mb-2">
+                        <div class="form-check">
+                            <input asp-for="HasExplosionRisk" id="HasExplosionRisk" class="form-check-input" type="checkbox" />
+                            <label class="form-check-label text-secondary fs-8" for="HasExplosionRisk">💥 Explosion Risk</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mb-4">
+                    <label asp-for="Description" class="form-label form-label-custom">Incident Details &amp; HazMat Info</label>
+                    <textarea asp-for="Description" id="Description" class="form-control form-control-custom" rows="3" placeholder="Provide additional details or specify chemical compound names if applicable..."></textarea>
+                    <span asp-validation-for="Description" class="text-danger fs-8"></span>
+                </div>
+
+                <div class="d-flex gap-3">
+                    <button type="submit" class="btn btn-primary-custom w-100">🚀 Solve &amp; Auto-Dispatch</button>
+                    <a asp-action="Index" class="btn btn-secondary-custom w-100 text-center">Cancel</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Right Column: Demo Scenarios -->
+    <div class="col-lg-4">
+        <div class="glass-card">
+            <h3 class="h5 text-white mb-2">🔧 QA &amp; Testing Presets</h3>
+            <p class="text-secondary fs-8 mb-4">Click any preset scenario below to automatically fill the form and run safety optimization checks.</p>
+
+            <button type="button" class="btn btn-secondary-custom w-100 mb-3 text-start d-block" onclick="fillScenario(1)">
+                <div class="d-flex justify-content-between">
+                    <span class="font-weight-600 text-white">Case 1: Minor Medical</span>
+                    <span class="badge bg-success">Auto-Dispatch</span>
+                </div>
+                <small class="text-muted d-block mt-1">Requires 1 Ambulance with Trauma Bag. General emergency care.</small>
+            </button>
+
+            <button type="button" class="btn btn-secondary-custom w-100 mb-3 text-start d-block" onclick="fillScenario(2)">
+                <div class="d-flex justify-content-between">
+                    <span class="font-weight-600 text-white">Case 2: Heart Attack</span>
+                    <span class="badge bg-success">Auto-Dispatch</span>
+                </div>
+                <small class="text-muted d-block mt-1">Requires 1 Ambulance with AED. ICU bed capacity checks.</small>
+            </button>
+
+            <button type="button" class="btn btn-secondary-custom w-100 mb-3 text-start d-block" onclick="fillScenario(3)">
+                <div class="d-flex justify-content-between">
+                    <span class="font-weight-600 text-white">Case 3: Trapped Victim</span>
+                    <span class="badge bg-success">Auto-Dispatch</span>
+                </div>
+                <small class="text-muted d-block mt-1">Requires Ambulance, Heavy Rescue with Hydraulic Cutter, Fire Engine.</small>
+            </button>
+
+            <button type="button" class="btn btn-secondary-custom w-100 mb-3 text-start d-block" onclick="fillScenario(4)">
+                <div class="d-flex justify-content-between">
+                    <span class="font-weight-600 text-white">Case 4: Chemical Hazard</span>
+                    <span class="badge bg-success">Auto-Dispatch</span>
+                </div>
+                <small class="text-muted d-block mt-1">Requires HazMat Vehicle with gas detector, Fire Engine, ICU/Toxicology hospital.</small>
+            </button>
+
+            <button type="button" class="btn btn-secondary-custom w-100 mb-3 text-start d-block text-danger border-danger border-opacity-25" onclick="fillScenario(5)">
+                <div class="d-flex justify-content-between">
+                    <span class="font-weight-600 text-danger">Case 5: Blocked Scenario</span>
+                    <span class="badge bg-danger">Safety Block</span>
+                </div>
+                <small class="text-muted d-block mt-1">Trapped victim incident. Fails safety constraints if Heavy Rescue status = unavailable.</small>
+            </button>
+
+            <hr class="border-secondary my-4" style="opacity: .1;">
+            
+            <button type="button" class="btn btn-secondary-custom w-100 mb-2 text-start text-warning border-warning border-opacity-25" onclick="fillScenario(6)">
+                <div class="d-flex justify-content-between">
+                    <span class="font-weight-600 text-warning">Case 6: Escalated Incident</span>
+                    <span class="badge bg-warning text-dark">Escalated</span>
+                </div>
+                <small class="text-muted d-block mt-1">Contradictory or incomplete inputs (e.g. 0 patients, chemical risk but no details).</small>
+            </button>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function fillScenario(id) {
+            // Clear all checkboxes
+            document.querySelectorAll('input[type="checkbox"]').forEach(c => c.checked = false);
+
+            if (id === 1) {
+                document.getElementById("ReporterName").value = "John Smith";
+                document.getElementById("ReporterPhone").value = "555-0101";
+                document.getElementById("LocationDescription").value = "Central Park Zoo Entrance";
+                document.getElementById("Latitude").value = "40.7300";
+                document.getElementById("Longitude").value = "-74.0010";
+                document.getElementById("IncidentCategory").value = "0"; // Medical
+                document.getElementById("InjuryType").value = "1"; // MinorInjury
+                document.getElementById("NumberOfPatients").value = "1";
+                document.getElementById("Description").value = "Scraped knee and slight ankle pain after falling near zoo gate.";
+            } 
+            else if (id === 2) {
+                document.getElementById("ReporterName").value = "Alice Cooper";
+                document.getElementById("ReporterPhone").value = "555-0202";
+                document.getElementById("LocationDescription").value = "Corporate Office, 5th Floor";
+                document.getElementById("Latitude").value = "40.7350";
+                document.getElementById("Longitude").value = "-74.0150";
+                document.getElementById("IncidentCategory").value = "0"; // Medical
+                document.getElementById("InjuryType").value = "11"; // HeartAttack
+                document.getElementById("NumberOfPatients").value = "1";
+                document.getElementById("HasBreathingProblem").checked = true;
+                document.getElementById("IsUnconscious").checked = true;
+                document.getElementById("Description").value = "Elderly male experiencing severe radiating chest pain, gasping for breath, slipped into unconsciousness.";
+            } 
+            else if (id === 3) {
+                document.getElementById("ReporterName").value = "Officer Davis";
+                document.getElementById("ReporterPhone").value = "555-0303";
+                document.getElementById("LocationDescription").value = "Interstate 95, Exit 4";
+                document.getElementById("Latitude").value = "40.7420";
+                document.getElementById("Longitude").value = "-74.0180";
+                document.getElementById("IncidentCategory").value = "1"; // RoadAccident
+                document.getElementById("InjuryType").value = "16"; // MultipleInjuries
+                document.getElementById("NumberOfPatients").value = "2";
+                document.getElementById("HasSevereBleeding").checked = true;
+                document.getElementById("HasTrappedVictim").checked = true;
+                document.getElementById("Description").value = "Head-on collision between a sedan and SUV. Driver of Sedan A has heavy arterial bleeding and is trapped behind the steering column.";
+            } 
+            else if (id === 4) {
+                document.getElementById("ReporterName").value = "Supervisor Jenkins";
+                document.getElementById("ReporterPhone").value = "555-0404";
+                document.getElementById("LocationDescription").value = "Apex Chem Warehouse B";
+                document.getElementById("Latitude").value = "40.7550";
+                document.getElementById("Longitude").value = "-73.9850";
+                document.getElementById("IncidentCategory").value = "4"; // ChemicalHazard
+                document.getElementById("InjuryType").value = "14"; // ChemicalExposure
+                document.getElementById("NumberOfPatients").value = "3";
+                document.getElementById("HasChemicalRisk").checked = true;
+                document.getElementById("HasBreathingProblem").checked = true;
+                document.getElementById("Description").value = "Chemical Valve rupture causing ammonia vapor cloud. Three technicians breathing in fumes, experiencing severe coughing and chemical burns.";
+            } 
+            else if (id === 5) {
+                // Trapped victim case. If the user disabled RESCUE-01 vehicle, this case will be blocked!
+                document.getElementById("ReporterName").value = "Wayne Gretzky";
+                document.getElementById("ReporterPhone").value = "555-0505";
+                document.getElementById("LocationDescription").value = "Industrial Site, Construction shaft";
+                document.getElementById("Latitude").value = "40.7480";
+                document.getElementById("Longitude").value = "-74.0120";
+                document.getElementById("IncidentCategory").value = "3"; // TrappedVictim
+                document.getElementById("InjuryType").value = "8"; // Trauma
+                document.getElementById("NumberOfPatients").value = "1";
+                document.getElementById("HasTrappedVictim").checked = true;
+                document.getElementById("Description").value = "Fallen girder pinned a steelworker. Heavy Rescue vehicle required to hoist and cut structural steel.";
+            }
+            else if (id === 6) {
+                // Contradictory: 0 patients, chemical risk but no description/details
+                document.getElementById("ReporterName").value = "Anxious Caller";
+                document.getElementById("ReporterPhone").value = "555-9999";
+                document.getElementById("LocationDescription").value = "Empty Factory Lot";
+                document.getElementById("Latitude").value = "40.7100";
+                document.getElementById("Longitude").value = "-74.0200";
+                document.getElementById("IncidentCategory").value = "4"; // ChemicalHazard
+                document.getElementById("InjuryType").value = "0"; // None
+                document.getElementById("NumberOfPatients").value = "0"; // Invalid count
+                document.getElementById("HasChemicalRisk").checked = true;
+                document.getElementById("Description").value = ""; // Missing explanation
+            }
+        }
+    </script>
+}

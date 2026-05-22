@@ -1,0 +1,148 @@
+@model List<RescueFlow.Web.Models.Entities.Hospital>
+@using RescueFlow.Web.Models.Enums
+@{
+    ViewData["Title"] = "Critical Hospital Networks";
+}
+
+<div class="glass-card animated-fade">
+    <div class="mb-4">
+        <h1 class="h3 font-weight-700 text-white mb-1">🏥 Critical Hospital Networks</h1>
+        <p class="text-secondary mb-0">Monitor capabilities, coordinates, and real-time bed capacity for ICU, trauma, and burn units.</p>
+    </div>
+
+    @if (Model == null || !Model.Any())
+    {
+        <div class="text-center py-5 text-secondary">
+            <span class="fs-1 d-block mb-2">🏥</span>
+            <p class="mb-0">No network hospitals registered in the database.</p>
+        </div>
+    }
+    else
+    {
+        <div class="row">
+            @foreach (var h in Model)
+            {
+                <div class="col-md-6 col-lg-6 mb-4">
+                    <div class="glass-card h-100 mb-0 d-flex flex-column" style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05);">
+                        <div class="d-flex justify-content-between align-items-start mb-3">
+                            <div>
+                                <h3 class="h5 text-white mb-0 font-weight-600">@h.Name</h3>
+                                <span class="text-secondary fs-8 font-monospace">GPS: @h.Latitude, @h.Longitude</span>
+                            </div>
+                            <span class="badge bg-@(h.IsActive ? "success" : "danger") px-2 py-1 fs-9 font-weight-600">
+                                @(h.IsActive ? "ONLINE" : "OFFLINE")
+                            </span>
+                        </div>
+
+                        <!-- Capabilities -->
+                        <div class="mb-4">
+                            <span class="d-block text-secondary fs-8 font-weight-600 mb-2">Approved Specialized Capabilities:</span>
+                            <div class="d-flex flex-wrap gap-1">
+                                @foreach (var cap in h.Capabilities)
+                                {
+                                    <span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-20 fs-9 py-1 px-2">
+                                        🛡️ @cap.Capability
+                                    </span>
+                                }
+                            </div>
+                        </div>
+
+                        <!-- Capacity Breakdown -->
+                        <div class="mt-auto">
+                            <span class="d-block text-secondary fs-8 font-weight-600 mb-3 border-bottom border-secondary border-opacity-10 pb-1">Capacity Loads:</span>
+                            
+                            @{
+                                // ICU
+                                double icuPct = h.Capacity.IcuCapacity > 0 ? ((double)h.Capacity.CurrentIcuLoad / h.Capacity.IcuCapacity) * 100 : 0;
+                                string icuFill = icuPct >= 85 ? "danger" : (icuPct >= 60 ? "warning" : "");
+                                
+                                // Trauma
+                                double traumaPct = h.Capacity.TraumaCapacity > 0 ? ((double)h.Capacity.CurrentTraumaLoad / h.Capacity.TraumaCapacity) * 100 : 0;
+                                string traumaFill = traumaPct >= 85 ? "danger" : (traumaPct >= 60 ? "warning" : "");
+                                
+                                // Burn Unit
+                                double burnPct = h.Capacity.BurnCapacity > 0 ? ((double)h.Capacity.CurrentBurnLoad / h.Capacity.BurnCapacity) * 100 : 0;
+                                string burnFill = burnPct >= 85 ? "danger" : (burnPct >= 60 ? "warning" : "");
+                                
+                                // Toxicology
+                                double toxPct = h.Capacity.ToxicologyCapacity > 0 ? ((double)h.Capacity.CurrentToxicologyLoad / h.Capacity.ToxicologyCapacity) * 100 : 0;
+                                string toxFill = toxPct >= 85 ? "danger" : (toxPct >= 60 ? "warning" : "");
+                                
+                                // General Emergency
+                                double emPct = h.Capacity.EmergencyCapacity > 0 ? ((double)h.Capacity.CurrentEmergencyLoad / h.Capacity.EmergencyCapacity) * 100 : 0;
+                                string emFill = emPct >= 85 ? "danger" : (emPct >= 60 ? "warning" : "");
+                            }
+
+                            <!-- ICU Progress -->
+                            <div class="mb-3">
+                                <div class="d-flex justify-content-between fs-8 mb-1">
+                                    <span class="text-white">ICU Beds</span>
+                                    <span class="text-secondary">@h.Capacity.CurrentIcuLoad / @h.Capacity.IcuCapacity beds</span>
+                                </div>
+                                <div class="load-bar">
+                                    <div class="load-fill @icuFill" style="width: @icuPct%"></div>
+                                </div>
+                            </div>
+
+                            <!-- Trauma Progress -->
+                            @if (h.Capacity.TraumaCapacity > 0)
+                            {
+                                <div class="mb-3">
+                                    <div class="d-flex justify-content-between fs-8 mb-1">
+                                        <span class="text-white">Trauma Beds</span>
+                                        <span class="text-secondary">@h.Capacity.CurrentTraumaLoad / @h.Capacity.TraumaCapacity beds</span>
+                                    </div>
+                                    <div class="load-bar">
+                                        <div class="load-fill @traumaFill" style="width: @traumaPct%"></div>
+                                    </div>
+                                </div>
+                            }
+
+                            <!-- Burn Unit Progress -->
+                            @if (h.Capacity.BurnCapacity > 0)
+                            {
+                                <div class="mb-3">
+                                    <div class="d-flex justify-content-between fs-8 mb-1">
+                                        <span class="text-white">Burn Unit Beds</span>
+                                        <span class="text-secondary">@h.Capacity.CurrentBurnLoad / @h.Capacity.BurnCapacity beds</span>
+                                    </div>
+                                    <div class="load-bar">
+                                        <div class="load-fill @burnFill" style="width: @burnPct%"></div>
+                                    </div>
+                                </div>
+                            }
+
+                            <!-- Toxicology Progress -->
+                            @if (h.Capacity.ToxicologyCapacity > 0)
+                            {
+                                <div class="mb-3">
+                                    <div class="d-flex justify-content-between fs-8 mb-1">
+                                        <span class="text-white">Toxicology Beds</span>
+                                        <span class="text-secondary">@h.Capacity.CurrentToxicologyLoad / @h.Capacity.ToxicologyCapacity beds</span>
+                                    </div>
+                                    <div class="load-bar">
+                                        <div class="load-fill @toxFill" style="width: @toxPct%"></div>
+                                    </div>
+                                </div>
+                            }
+
+                            <!-- Emergency Progress -->
+                            @if (h.Capacity.EmergencyCapacity > 0)
+                            {
+                                <div class="mb-3">
+                                    <div class="d-flex justify-content-between fs-8 mb-1">
+                                        <span class="text-white">General Emergency Beds</span>
+                                        <span class="text-secondary">@h.Capacity.CurrentEmergencyLoad / @h.Capacity.EmergencyCapacity beds</span>
+                                    </div>
+                                    <div class="load-bar">
+                                        <div class="load-fill @emFill" style="width: @emPct%"></div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>

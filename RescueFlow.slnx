@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="RescueFlow.Tests/RescueFlow.Tests.csproj" />
+  <Project Path="RescueFlow.Web/RescueFlow.Web.csproj" />
+</Solution>

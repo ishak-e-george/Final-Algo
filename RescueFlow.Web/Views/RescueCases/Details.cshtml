@@ -1,0 +1,409 @@
+@model RescueFlow.Web.Models.Entities.RescueCase
+@using RescueFlow.Web.Models.Enums
+@using System.Text.Json
+@{
+    ViewData["Title"] = $"Case #{Model.Id} Analysis";
+    var auditLogs = (List<RescueFlow.Web.Models.Entities.AuditLog>)ViewBag.AuditLogs;
+    var decisionLogs = (List<RescueFlow.Web.Models.Entities.DispatchDecisionLog>)ViewBag.DecisionLogs;
+    var algorithmLogs = (List<RescueFlow.Web.Models.Entities.AlgorithmRunLog>)ViewBag.AlgorithmLogs;
+    var validationResults = (List<RescueFlow.Web.Models.Entities.SafetyValidationResult>)ViewBag.ValidationResults;
+    var safetyViolations = (List<RescueFlow.Web.Models.Entities.SafetyViolation>)ViewBag.SafetyViolations;
+
+    string statusBadgeClass = "badge-pending";
+    switch (Model.Status)
+    {
+        case CaseStatus.AutoAssigned: statusBadgeClass = "badge-assigned"; break;
+        case CaseStatus.BlockedNoSafePlan: statusBadgeClass = "badge-blocked"; break;
+        case CaseStatus.Escalated: statusBadgeClass = "badge-escalated"; break;
+        case CaseStatus.Closed: statusBadgeClass = "badge-closed"; break;
+        case CaseStatus.Cancelled: statusBadgeClass = "badge-cancelled"; break;
+    }
+}
+
+<div class="animated-fade">
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger glass-card border-danger text-danger mb-4">
+            ⚠️ @TempData["Error"]
+        </div>
+    }
+
+    <!-- Header Block -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <div class="d-flex align-items-center gap-3">
+                <h1 class="h2 font-weight-700 text-white mb-0">Incident Case #@Model.Id</h1>
+                <span class="badge-custom @statusBadgeClass fs-7">@Model.Status</span>
+            </div>
+            <p class="text-secondary mb-0">Reported on @Model.CreatedAt.ToLocalTime().ToString("F")</p>
+        </div>
+        <div class="d-flex gap-2">
+            @if (Model.Status == CaseStatus.AutoAssigned || Model.Status == CaseStatus.BlockedNoSafePlan || Model.Status == CaseStatus.Escalated)
+            {
+                <form asp-action="Close" asp-route-id="@Model.Id" method="post">
+                    <button type="submit" class="btn btn-primary-custom" onclick="return confirm('Are you sure you want to close this case and release all allocated resources?');">✅ Close &amp; Release Resources</button>
+                </form>
+            }
+            <a class="btn btn-secondary-custom" asp-action="Index">📂 Back to Queue</a>
+        </div>
+    </div>
+
+    <!-- Case Fact Overview & Response Plan -->
+    <div class="row">
+        <!-- Case Facts card -->
+        <div class="col-lg-6 mb-4">
+            <div class="glass-card h-100">
+                <h3 class="h5 text-white mb-3">📋 Incident Facts</h3>
+                <div class="row mb-3">
+                    <div class="col-6">
+                        <span class="text-secondary fs-8 d-block">Reporter Name</span>
+                        <strong class="text-white">@Model.ReporterName</strong>
+                    </div>
+                    <div class="col-6">
+                        <span class="text-secondary fs-8 d-block">Reporter Contact</span>
+                        <strong class="text-white">@Model.ReporterPhone</strong>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <span class="text-secondary fs-8 d-block">Location Details</span>
+                    <strong class="text-white">@Model.LocationDescription</strong>
+                    <small class="text-muted d-block font-monospace">GPS: @Model.Latitude, @Model.Longitude</small>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-4">
+                        <span class="text-secondary fs-8 d-block">Incident Category</span>
+                        <strong class="text-white">@Model.IncidentCategory</strong>
+                    </div>
+                    <div class="col-4">
+                        <span class="text-secondary fs-8 d-block">Injury Classification</span>
+                        <strong class="text-white">@Model.InjuryType</strong>
+                    </div>
+                    <div class="col-4">
+                        <span class="text-secondary fs-8 d-block">Number of Patients</span>
+                        <strong class="text-white">@Model.NumberOfPatients</strong>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <span class="text-secondary fs-8 d-block">Risk Attributes</span>
+                    <div class="d-flex flex-wrap gap-2 mt-1">
+                        <span class="badge bg-@(Model.HasSevereBleeding ? "danger text-white" : "secondary text-muted") fs-9">🩸 Severe Bleeding</span>
+                        <span class="badge bg-@(Model.HasBreathingProblem ? "danger text-white" : "secondary text-muted") fs-9">🫁 Breathing Issue</span>
+                        <span class="badge bg-@(Model.IsUnconscious ? "danger text-white" : "secondary text-muted") fs-9">💤 Unconscious</span>
+                        <span class="badge bg-@(Model.HasFire ? "warning text-dark" : "secondary text-muted") fs-9">🔥 Active Fire</span>
+                        <span class="badge bg-@(Model.HasTrappedVictim ? "danger text-white" : "secondary text-muted") fs-9">⛓️ Trapped Victim</span>
+                        <span class="badge bg-@(Model.HasChemicalRisk ? "warning text-dark" : "secondary text-muted") fs-9">☣️ HazMat Risk</span>
+                        <span class="badge bg-@(Model.HasExplosionRisk ? "warning text-dark" : "secondary text-muted") fs-9">💥 Explosion Risk</span>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <span class="text-secondary fs-8 d-block">Description / HazMat Context</span>
+                    <p class="text-white mb-0 bg-white bg-opacity-5 p-2 rounded fs-8">@(string.IsNullOrEmpty(Model.Description) ? "No additional details provided." : Model.Description)</p>
+                </div>
+
+                <div>
+                    <span class="text-secondary fs-8 d-block mb-1">Calculated Severity Score</span>
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="text-warning display-6" style="line-height: 1;">
+                            @for (int i = 1; i <= 5; i++)
+                            {
+                                if (i <= Model.CalculatedSeverity)
+                                {
+                                    <span>★</span>
+                                }
+                                else
+                                {
+                                    <span class="text-secondary" style="opacity: 0.3;">★</span>
+                                }
+                            }
+                        </div>
+                        <span class="badge bg-dark border border-secondary text-secondary px-3 py-2 fs-7 font-weight-700">@Model.CalculatedSeverity / 5</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Dispatch Plan card -->
+        <div class="col-lg-6 mb-4">
+            <div class="glass-card h-100">
+                <h3 class="h5 text-white mb-3">🚑 SC-RCMDA Response Plan</h3>
+
+                @if (Model.ResponsePlan == null)
+                {
+                    <div class="text-center py-5 text-secondary">
+                        <span class="fs-1 d-block mb-2">🧊</span>
+                        <p class="mb-0">No response plan generated. Case classification escalated or input error occurred.</p>
+                    </div>
+                }
+                else
+                {
+                    <div class="mb-4">
+                        <div class="row mb-3">
+                            <div class="col-6">
+                                <span class="text-secondary fs-8 d-block">Estimated Scene ETA</span>
+                                <strong class="text-white display-6 font-weight-700">@Model.ResponsePlan.EstimatedSceneEtaMinutes.ToString("N1") <span class="fs-6 text-muted">mins</span></strong>
+                                <small class="text-muted d-block">MVP Estimated Straight-line ETA</small>
+                            </div>
+                            <div class="col-6">
+                                <span class="text-secondary fs-8 d-block">Hospital Destination</span>
+                                @if (Model.ResponsePlan.RequiresHospital && Model.ResponsePlan.SelectedHospital != null)
+                                {
+                                    <strong class="text-white d-block">🏥 @Model.ResponsePlan.SelectedHospital.Name</strong>
+                                    <small class="text-success d-block font-weight-600">Total ETA: @Model.ResponsePlan.EstimatedHospitalEtaMinutes?.ToString("N1") mins</small>
+                                }
+                                else if (Model.ResponsePlan.RequiresHospital)
+                                {
+                                    <strong class="text-danger d-block">❌ Hospital Required but NONE Matched</strong>
+                                }
+                                else
+                                {
+                                    <strong class="text-secondary d-block">Not Required (Minor Injury)</strong>
+                                }
+                            </div>
+                        </div>
+                    </div>
+
+                    <h4 class="h6 text-white mb-3">🚒 Assigned Responders</h4>
+                    @if (Model.ResponsePlan.Assignments == null || !Model.ResponsePlan.Assignments.Any())
+                    {
+                        <p class="text-danger">No vehicles assigned to this response plan.</p>
+                    }
+                    else
+                    {
+                        <div class="table-responsive mb-4">
+                            <table class="table-custom fs-8">
+                                <thead>
+                                    <tr>
+                                        <th>Vehicle Code</th>
+                                        <th>Type</th>
+                                        <th>Station</th>
+                                        <th>ETA</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var assign in Model.ResponsePlan.Assignments)
+                                    {
+                                        <tr>
+                                            <td class="font-weight-600 text-white">@assign.RescueVehicle.Code</td>
+                                            <td>@assign.RescueVehicle.VehicleType</td>
+                                            <td>@assign.RescueVehicle.Station.Name</td>
+                                            <td>@assign.EtaMinutes.ToString("N1") mins</td>
+                                            <td>
+                                                <span class="badge bg-@(assign.IsActive ? "primary text-white" : "secondary text-muted")">
+                                                    @(assign.IsActive ? "Active" : "Released")
+                                                </span>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+
+                    <div class="bg-dark bg-opacity-50 border border-secondary border-opacity-25 rounded p-3">
+                        <span class="text-secondary fs-8 d-block">Validation Message</span>
+                        @if (Model.ResponsePlan.SafetyValidationPassed)
+                        {
+                            <span class="text-success font-weight-600">✅ @Model.ResponsePlan.ValidationMessage</span>
+                        }
+                        else
+                        {
+                            <span class="text-danger font-weight-600">❌ @Model.ResponsePlan.ValidationMessage</span>
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+
+    <!-- Diagnostic Engine, Decision Trace & Logs -->
+    <div class="glass-card mb-4">
+        <h3 class="h5 text-white mb-3">🧬 Diagnostics &amp; Safety Audit Trace</h3>
+
+        <ul class="nav nav-tabs mb-3 border-secondary border-opacity-25" id="myTab" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active text-white bg-transparent border-0 font-weight-600" id="decision-tab" data-bs-toggle="tab" data-bs-target="#decision" type="button" role="tab" aria-controls="decision" aria-selected="true">⚙️ Decision Engine</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link text-white bg-transparent border-0 font-weight-600" id="validation-tab" data-bs-toggle="tab" data-bs-target="#validation" type="button" role="tab" aria-controls="validation" aria-selected="false">🛡️ Safety Validator</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link text-white bg-transparent border-0 font-weight-600" id="algorithm-tab" data-bs-toggle="tab" data-bs-target="#algorithm" type="button" role="tab" aria-controls="algorithm" aria-selected="false">🧮 Algorithm Log</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link text-white bg-transparent border-0 font-weight-600" id="audit-tab" data-bs-toggle="tab" data-bs-target="#audit" type="button" role="tab" aria-controls="audit" aria-selected="false">📜 General Audit</button>
+            </li>
+        </ul>
+
+        <div class="tab-content" id="myTabContent">
+            <!-- Decision Log Tab -->
+            <div class="tab-pane fade show active" id="decision" role="tabpanel" aria-labelledby="decision-tab">
+                @if (decisionLogs == null || !decisionLogs.Any())
+                {
+                    <p class="text-secondary py-3">No decision logs recorded.</p>
+                }
+                else
+                {
+                    <div class="timeline ps-3 border-start border-secondary border-opacity-25 py-2">
+                        @foreach (var log in decisionLogs)
+                        {
+                            <div class="mb-4 position-relative">
+                                <div class="position-absolute bg-primary rounded-circle" style="width: 10px; height: 10px; left: -20px; top: 6px;"></div>
+                                <div class="d-flex justify-content-between mb-1 fs-8 text-secondary">
+                                    <strong class="text-white">@log.Action</strong>
+                                    <span>@log.CreatedAtUtc.ToLocalTime().ToString("g")</span>
+                                </div>
+                                <p class="text-muted fs-8 mb-0">@log.Details</p>
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+
+            <!-- Safety Validation Tab -->
+            <div class="tab-pane fade" id="validation" role="tabpanel" aria-labelledby="validation-tab">
+                @if (validationResults == null || !validationResults.Any())
+                {
+                    <p class="text-secondary py-3">No safety validation logs recorded.</p>
+                }
+                else
+                {
+                    @foreach (var res in validationResults)
+                    {
+                        <div class="border border-secondary border-opacity-25 rounded p-3 mb-3">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span class="badge bg-@(res.ValidationPassed ? "success" : "danger")">
+                                    @(res.ValidationPassed ? "PASSED" : "FAILED")
+                                </span>
+                                <small class="text-secondary">@res.CreatedAtUtc.ToLocalTime().ToString("g")</small>
+                            </div>
+                            <p class="text-white fs-8">@res.Message</p>
+                            
+                            @if (!string.IsNullOrEmpty(res.CheckedRulesJson))
+                            {
+                                <div class="fs-9 text-muted mt-2">
+                                    <strong>Rules Checked:</strong> @res.CheckedRulesJson
+                                </div>
+                            }
+                        </div>
+                    }
+
+                    @if (safetyViolations != null && safetyViolations.Any())
+                    {
+                        <h4 class="h6 text-danger mt-4 mb-2">❌ Logged Violations</h4>
+                        <div class="table-responsive">
+                            <table class="table-custom fs-8">
+                                <thead>
+                                    <tr>
+                                        <th>Rule Context</th>
+                                        <th>Violation Specifics</th>
+                                        <th>Log Time</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var viol in safetyViolations)
+                                    {
+                                        <tr>
+                                            <td class="text-danger font-weight-600">@viol.RuleName</td>
+                                            <td class="text-white">@viol.ViolationDetails</td>
+                                            <td class="text-secondary">@viol.CreatedAtUtc.ToLocalTime().ToString("g")</td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                }
+            </div>
+
+            <!-- Algorithm Run Log Tab -->
+            <div class="tab-pane fade" id="algorithm" role="tabpanel" aria-labelledby="algorithm-tab">
+                @if (algorithmLogs == null || !algorithmLogs.Any())
+                {
+                    <p class="text-secondary py-3">No algorithm run logs recorded.</p>
+                }
+                else
+                {
+                    @foreach (var log in algorithmLogs)
+                    {
+                        <div class="border border-secondary border-opacity-25 rounded p-3 mb-3 fs-8">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <div>
+                                    <span class="text-secondary">Severity:</span> <strong class="text-white">@log.SeverityScore</strong>
+                                    <span class="mx-2 text-secondary">|</span>
+                                    <span class="text-secondary">Validation:</span> 
+                                    <strong class="text-@(log.ValidationPassed ? "success" : "danger")">
+                                        @(log.ValidationPassed ? "PASSED" : "FAILED")
+                                    </strong>
+                                </div>
+                                <span class="text-muted">@log.CreatedAtUtc.ToLocalTime().ToString("g")</span>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6 mb-2">
+                                    <strong class="text-secondary d-block">Required Vehicles:</strong>
+                                    <pre class="bg-dark p-2 rounded text-success text-opacity-75 fs-9 mb-0 overflow-auto" style="max-height: 100px;">@log.RequiredVehiclesJson</pre>
+                                </div>
+                                <div class="col-md-6 mb-2">
+                                    <strong class="text-secondary d-block">Selected Vehicles:</strong>
+                                    <pre class="bg-dark p-2 rounded text-info text-opacity-75 fs-9 mb-0 overflow-auto" style="max-height: 100px;">@log.SelectedVehiclesJson</pre>
+                                </div>
+                                <div class="col-md-6 mb-2">
+                                    <strong class="text-secondary d-block">Rejected Vehicles &amp; Justifications:</strong>
+                                    <pre class="bg-dark p-2 rounded text-warning text-opacity-75 fs-9 mb-0 overflow-auto" style="max-height: 100px;">@log.RejectedVehiclesJson</pre>
+                                </div>
+                                <div class="col-md-6 mb-2">
+                                    <strong class="text-secondary d-block">Hospital Selection Details:</strong>
+                                    <div class="bg-dark p-2 rounded text-white fs-9" style="min-height: 43px;">
+                                        Selected ID: @(log.SelectedHospitalId?.ToString() ?? "None") <br/>
+                                        Rejected: @log.RejectedHospitalsJson
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="mt-3 bg-dark p-2 rounded text-white font-monospace fs-9 border-start border-info border-3" style="white-space: pre-wrap;">
+                                <strong>Execution Trace:</strong> <br/>@log.ExecutionTrace
+                            </div>
+                        </div>
+                    }
+                }
+            </div>
+
+            <!-- General Audit Log Tab -->
+            <div class="tab-pane fade" id="audit" role="tabpanel" aria-labelledby="audit-tab">
+                @if (auditLogs == null || !auditLogs.Any())
+                {
+                    <p class="text-secondary py-3">No general audit logs recorded.</p>
+                }
+                else
+                {
+                    <div class="table-responsive">
+                        <table class="table-custom fs-8">
+                            <thead>
+                                <tr>
+                                    <th>Event Action</th>
+                                    <th>Event Details</th>
+                                    <th>Logged Time</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var log in auditLogs)
+                                {
+                                    <tr>
+                                        <td class="text-white font-weight-600">@log.Action</td>
+                                        <td class="text-muted">@log.Details</td>
+                                        <td class="text-secondary">@log.CreatedAt.ToLocalTime().ToString("g")</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>

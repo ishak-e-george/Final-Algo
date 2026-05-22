@@ -1,0 +1,93 @@
+@model List<RescueFlow.Web.Models.Entities.RescueCase>
+@using RescueFlow.Web.Models.Enums
+@{
+    ViewData["Title"] = "Active Incidents Log";
+}
+
+<div class="glass-card animated-fade">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 font-weight-700 text-white mb-1">Active Incident Queue</h1>
+            <p class="text-secondary mb-0">List of all active and historically logged rescue incidents.</p>
+        </div>
+        <a class="btn btn-primary-custom" asp-action="Create">🚨 Report Incident</a>
+    </div>
+
+    @if (Model == null || !Model.Any())
+    {
+        <div class="text-center py-5 text-secondary">
+            <span class="fs-1 d-block mb-2">🧊</span>
+            <p class="mb-0">No incidents reported yet.</p>
+        </div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table-custom">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Reporter</th>
+                        <th>Category</th>
+                        <th>Injury Type</th>
+                        <th>Patients</th>
+                        <th>Severity</th>
+                        <th>Status</th>
+                        <th>Created</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var c in Model)
+                    {
+                        string badgeClass = "badge-pending";
+                        switch (c.Status)
+                        {
+                            case CaseStatus.AutoAssigned: badgeClass = "badge-assigned"; break;
+                            case CaseStatus.BlockedNoSafePlan: badgeClass = "badge-blocked"; break;
+                            case CaseStatus.Escalated: badgeClass = "badge-escalated"; break;
+                            case CaseStatus.Closed: badgeClass = "badge-closed"; break;
+                            case CaseStatus.Cancelled: badgeClass = "badge-cancelled"; break;
+                        }
+
+                        <tr>
+                            <td class="font-weight-600 text-white">#@c.Id</td>
+                            <td>
+                                <span class="d-block text-white">@c.ReporterName</span>
+                                <small class="text-muted">@c.ReporterPhone</small>
+                            </td>
+                            <td><span class="text-white">@c.IncidentCategory</span></td>
+                            <td>@c.InjuryType</td>
+                            <td>@c.NumberOfPatients</td>
+                            <td>
+                                <div class="d-flex align-items-center gap-1">
+                                    <div class="text-warning" style="font-size: 0.9rem;">
+                                        @for (int i = 1; i <= 5; i++)
+                                        {
+                                            if (i <= c.CalculatedSeverity)
+                                            {
+                                                <span>★</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="text-secondary" style="opacity: 0.3;">★</span>
+                                            }
+                                        }
+                                    </div>
+                                    <span class="text-muted fs-8">(@c.CalculatedSeverity)</span>
+                                </div>
+                            </td>
+                            <td>
+                                <span class="badge-custom @badgeClass">@c.Status</span>
+                            </td>
+                            <td class="text-secondary fs-8">@c.CreatedAt.ToLocalTime().ToString("g")</td>
+                            <td>
+                                <a class="btn btn-secondary-custom py-1 px-3 fs-8" asp-action="Details" asp-route-id="@c.Id">🔍 View details</a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>
